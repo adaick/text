@@ -1,0 +1,46 @@
+{% extends 'layout.html' %}
+{% block title %}More Charts{% endblock %}
+{% block content %}
+<h2 class="section-title">Extended Portfolio Insights</h2>
+
+<h3 class="subsection">📊 Daily Log Returns</h3>
+<img src="{{ url_for('static', filename='charts/daily_log_returns_all.jpg') }}" class="chart-img" alt="Daily Log Returns">
+
+<h3 class="subsection">📊 Asset Prices Overview</h3>
+<img src="{{ url_for('static', filename='charts/asset_prices_all.jpg') }}" class="chart-img" alt="Asset Prices">
+
+<a href="{{ url_for('routes.results') }}" class="btn">Back to Results</a>
+
+<style>
+.section-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: white;
+}
+.subsection {
+    margin-top: 2rem;
+    font-size: 1.3rem;
+    border-bottom: 1px solid #00c853;
+    padding-bottom: 0.3rem;
+    color: white;
+}
+.chart-img {
+    width: 100%;
+    max-width: 900px;
+    margin-top: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(0,200,83,0.2);
+}
+.btn {
+    display: inline-block;
+    margin-top: 2rem;
+    background-color: #00c853;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: bold;
+    text-decoration: none;
+}
+.btn:hover { background-color: #00b24a; }
+</style>
+{% endblock %}

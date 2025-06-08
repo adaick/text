@@ -1,0 +1,7 @@
+{% extends 'layout.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1>Welcome to the Green Robo Advisor</h1>
+<p>Simulate your ETF investment strategies.</p>
+<a href="{{ url_for('routes.form') }}" class="btn-green">Start Portfolio</a>
+{% endblock %}
