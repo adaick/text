@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+{% block title %}More Charts{% endblock %}
+{% block content %}
+<h2 class="section-title">Extended Portfolio Insights</h2>
+
+<h3 class="subsection">Daily Log Returns</h3>
+<div id="log-returns-chart"></div>
+
+<h3 class="subsection">Asset Prices Overview</h3>
+<div id="asset-prices-chart"></div>
+
+<!-- <a href="{{ url_for('routes.results') }}" class="btn">Back to Results</a> -->
+
+<!-- Plotly CDN -->
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+const logReturns = {{ log_returns_data | tojson }};
+const prices = {{ asset_prices_data | tojson }};
+
+// Log Returns Chart
+if (logReturns.length > 0) {
+    const dateSeries = logReturns.map(d => d.date);
+    const seriesKeys = Object.keys(logReturns[0]).filter(k => k !== 'date');
+    const tracesLog = seriesKeys.map(asset => ({
+        x: dateSeries,
+        y: logReturns.map(d => d[asset]),
+        mode: 'lines',
+        type: 'scatter',
+        name: asset
+    }));
+    Plotly.newPlot('log-returns-chart', tracesLog, {
+        title: 'Daily Log Returns', paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
+        xaxis: { title: 'Date', color: 'white' },
+        yaxis: { title: 'Returns', color: 'white' }
+    });
+}
+
+// Asset Prices Chart
+if (prices.length > 0) {
+    const dateSeries = prices.map(d => d.date);
+    const seriesKeys = Object.keys(prices[0]).filter(k => k !== 'date');
+    const tracesPrice = seriesKeys.map(asset => ({
+        x: dateSeries,
+        y: prices.map(d => d[asset]),
+        mode: 'lines',
+        type: 'scatter',
+        name: asset
+    }));
+    Plotly.newPlot('asset-prices-chart', tracesPrice, {
+        title: 'Asset Prices Over Time', paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
+        xaxis: { title: 'Date', color: 'white' },
+        yaxis: { title: 'Price', color: 'white' }
+    });
+}
+</script>
+
+<style>
+.section-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  color: white;
+}
+.subsection {
+  margin-top: 2rem;
+  font-size: 1.3rem;
+  border-bottom: 1px solid #00c853;
+  padding-bottom: 0.3rem;
+  color: white;
+}
+.btn {
+  display: inline-block;
+  margin-top: 2rem;
+  background-color: #00c853;
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: bold;
+  text-decoration: none;
+}
+.btn:hover { background-color: #00b24a; }
+</style>
+{% endblock %}

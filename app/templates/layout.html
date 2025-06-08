@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Green Robo Advisor{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="{{ url_for('routes.home') }}">GreenRobo</a>
+        </div>
+        <div class="nav-right">
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('routes.home') }}">Home</a>
+            <a href="{{ url_for('routes.logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('routes.login') }}">Login</a>
+            <a href="{{ url_for('routes.register') }}">Register</a>
+        {% endif %}
+        </div>
+    </nav>
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
