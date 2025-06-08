@@ -421,16 +421,16 @@ class RoboAdvisor:
                 plt.plot(sigma_opt, mu_opt, '*', markersize = 10, label = s)
         
         if showEfficientFrontier:
-            
-            if 'max-sharpe-ratio' in solDict.keys():
-                
+
+            if solDict is not None and 'max-sharpe-ratio' in solDict.keys():
+
                 # Get optimal weights of max-sharpe-ration
                 w = solDict['max-sharpe-ratio']
                 # Get maximum sigma
                 buffer  = 1.0 # set to one if no buffer else >1 e.g. 1.3-1.5 (might deliver unstable optiization results)
                 sigma_max = np.sqrt(w @ self.cov @ w.T) * buffer
 
-            else: 
+            else:
                 sigma_max = 0.0065 #on a daily basis
             
             # Add plot for Efficient frontier (until optimal sharpe ratio sigma if possible else o.0065)
