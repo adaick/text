@@ -770,6 +770,106 @@ class RoboAdvisor:
 
         return positions
 
+    def _prepare_backtest_data(self, start_time=30, dynamic_strategy='min-var', bnds=[0,1]):
+        """Prepare data for backtesting plots."""
+        df = self.data
+        df_solutions = self.get_all_optimal_solutions(bnds=bnds)
+        time, W = self.get_optimal_allocation_over_time(bnds=bnds)
+        W_smoothing = self.exp_smoothing(time=time, W=W, alpha=0.5, bnds=bnds)
+
+        n = len(df.columns)
+
+        w0 = np.ones(n) / n
+        optimum0 = df @ w0.T
+        w = df_solutions.loc['min-var', 'solutions']
+        optimum = df @ w.T
+        w1 = df_solutions.loc['max-exp', 'solutions']
+        optimum1 = df @ w1.T
+        w2 = df_solutions.loc['max-sharpe-ratio', 'solutions']
+        optimum2 = df @ w2.T
+
+        df_opt = df.copy()
+        df_opt["Equal Weights"] = optimum0
+        df_opt["Min Variance Portfolio (buy & hold)"] = optimum
+        df_opt["Max Expected Return (buy & hold)"] = optimum1
+        df_opt["Max Sharpe Ratio (buy & hold)"] = optimum2
+
+        W_arr = np.array(W)
+        W_smooth_arr = np.array(W_smoothing)
+        W_dynamic = np.vstack([W_arr[0]] * start_time)
+        W_dynamic_smooth = np.vstack([W_smooth_arr[0]] * start_time)
+
+        period_width = time[1] - time[0]
+        for i in range(1, len(W_arr) - 1):
+            W_dynamic = np.vstack((W_dynamic, np.vstack([W_arr[i]] * period_width)))
+            W_dynamic_smooth = np.vstack((W_dynamic_smooth, np.vstack([W_smooth_arr[i]] * period_width)))
+
+        W_dynamic = np.vstack((W_dynamic, [W_arr[-1]] * (len(df) - len(W_dynamic))))
+        W_dynamic_smooth = np.vstack((W_dynamic_smooth, [W_smooth_arr[-1]] * (len(df) - len(W_dynamic_smooth))))
+
+        df_backtest_all = df.copy()
+        dynamic_opt = np.sum(df_backtest_all * W_dynamic, axis=1)
+        dynamic_opt_smooth = np.sum(df_backtest_all * W_dynamic_smooth, axis=1)
+
+        df_opt["Dynamic " + dynamic_strategy] = dynamic_opt
+        df_opt["Dynamic " + dynamic_strategy + " Smooth"] = dynamic_opt_smooth
+
+        logR_opt = pd.DataFrame(np.log(df_opt).diff()).dropna()
+
+        return df_opt, logR_opt, time, W_smoothing
+
+    def plotCumulativeReturns(self):
+        """Plot cumulative log returns with legend placement."""
+        _, logR_opt, _, _ = self._prepare_backtest_data()
+
+        sns.set_context("notebook", font_scale=1.2, rc={"lines.linewidth": 1.2})
+        custom_style = {
+            'grid.color': '0.8',
+            'grid.linestyle': '--',
+            'grid.linewidth': 0.05,
+        }
+        sns.set_style(custom_style)
+
+        dataset = logR_opt.cumsum()
+        positions = self.legend_positions(df=dataset, y=dataset.columns, rel_Values=True)
+
+        f, ax = plt.subplots(figsize=(20, 15))
+        cmap = plt.cm.get_cmap('viridis', len(dataset.columns))
+        for i, (column, position) in enumerate(positions.items()):
+            color = cmap(float(i) / len(positions))
+            ax = dataset.plot(y=column, legend=False, ax=ax, color=color)
+            ax.text(
+                dataset[column].last_valid_index() + datetime.timedelta(days=1),
+                position,
+                column,
+                fontsize=12,
+                color=color,
+            )
+        ax.set_ylabel('Cumulative Returns')
+        ax.set_yticklabels(['{:3.0f}%'.format(x * 100) for x in ax.get_yticks()])
+        sns.despine()
+
+    def plotWeightsSmoothing(self):
+        """Plot smoothed portfolio weights over time."""
+        time, W = self.get_optimal_allocation_over_time()
+        W_smoothing = self.exp_smoothing(time=time, W=W, alpha=0.5)
+        self.weightPlot(time=time, W=W_smoothing,
+                        title="Smoothed Portfolio Allocation", name="weight_plot_with_smoothing")
+
+    def plotDailyReturnsAll(self):
+        """Plot daily log returns for all strategies."""
+        _, logR_opt, _, _ = self._prepare_backtest_data()
+        cmap = "viridis"
+        logR_opt.plot(figsize=(12, 7), title="Daily Log Returns", cmap=cmap)
+        plt.legend(bbox_to_anchor=(1.0, 1.0))
+
+    def plotAssetPricesAll(self):
+        """Plot asset prices for all strategies."""
+        df_opt, _, _, _ = self._prepare_backtest_data()
+        cmap = "viridis"
+        df_opt.plot(figsize=(12, 7), cmap=cmap)
+        plt.legend(bbox_to_anchor=(1.0, 1.0))
+
 
 # ✅ Add inside RoboAdvisor class in Green_Robo_Advisor_Class.py
 
