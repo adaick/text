@@ -20,3 +20,4 @@ requests==2.32.3
 scipy==1.15.2
 weasyprint==65.1
 yfinance==0.2.58
+seaborn==0.13.2
