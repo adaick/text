@@ -1,114 +1,113 @@
 {% extends 'layout.html' %}
 {% block title %}Simulation Results{% endblock %}
-{% block content %}
 
-<div class="result-actions">
+{% block content %}
+  <!-- Navigation Actions -->
+  <div class="result-actions">
     <a href="{{ url_for('routes.history') if current_user.is_authenticated else '#' }}" class="btn" onclick="{{ 'return confirmLogin()' if not current_user.is_authenticated else '' }}">History</a>
     <a href="{{ url_for('routes.form') }}" class="btn">Adjust Portfolio</a>
 <!--    <a href="{{ url_for('routes.home') }}" class="btn">Back to Home</a> -->
     <a href="{{ url_for('routes.more_charts') }}" class="btn">More Charts</a>
-    <a href="#" class="btn" onclick="downloadReport()">Download Report</a>
 </div>
 
-<h2 class="section-title">Portfolio Simulation Summary</h2>
+  <!-- Welcome Message -->
+  <h2 class="section-title">Portfolio Simulation Summary</h2>
+  {% if current_user.is_authenticated %}
+    <p class="welcome-msg" style="color: #2f855a;">Hello {{ current_user.username }} 👋</p>
+  {% endif %}
 
-{% if current_user.is_authenticated %}
-<p class="welcome-msg">Hello {{ current_user.username }} 👋</p>
-{% endif %}
-<div class="metrics">
+  <!-- Key Metrics -->
+  <div class="metrics">
     <div class="card"><h3>Strategy</h3><p>{{ strategy.replace('-', ' ').title() }}</p></div>
     <div class="card"><h3>Expected Return</h3><p>{{ expected_return }}%</p></div>
     <div class="card"><h3>Volatility Cap</h3><p>{{ volatility_cap }}%</p></div>
     <div class="card"><h3>Sharpe Ratio</h3><p>{{ sharpe_ratio }}</p></div>
-</div>
+  </div>
 
-<!-- Interactive Charts -->
+  <!-- Chart Sections -->
+  <h3 class="subsection">Asset Log Return Distribution</h3>
+  <div id="histogram-chart" class="chart-box"></div>
 
-<h3 class="subsection">Asset Log Return Distribution</h3>
-<div id="histogram-chart"></div>
+  <h3 class="subsection">μ-σ Diagram</h3>
+  <div id="mu-sigma-chart" class="chart-box"></div>
 
-<h3 class="subsection">μ-σ Diagram</h3>
-<div id="mu-sigma-chart"></div>
+  <h3 class="subsection">Cumulative Returns</h3>
+  <div id="cum-returns-chart" class="chart-box"></div>
 
-<h3 class="subsection">Cumulative Returns</h3>
-<div id="cum-returns-chart"></div>
+  <h3 class="subsection">Smoothed Portfolio Weights</h3>
+  <div id="weights-chart" class="chart-box"></div>
 
-<h3 class="subsection">Smoothed Portfolio Weights</h3>
-<div id="weights-chart"></div>
+  <!-- Plotly CDN -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+    const logHistData = {{ log_hist_data | tojson }};
+    Plotly.newPlot('histogram-chart', [{
+      x: logHistData,
+      type: 'histogram',
+      marker: { color: '#38a169' },
+      opacity: 0.75
+    }], {
+      title: 'Distribution of Log Returns Across Assets',
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Log Return', color: '#1b4332' },
+      yaxis: { title: 'Frequency', color: '#1b4332' }
+    });
 
-<!-- Plotly CDN -->
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
-<script>
+    const muSigmaData = {{ mu_sigma_data | tojson }};
+    Plotly.newPlot('mu-sigma-chart', [{
+      x: muSigmaData.map(d => d.sigma),
+      y: muSigmaData.map(d => d.mu),
+      mode: 'markers+text',
+      type: 'scatter',
+      text: muSigmaData.map(d => d.label),
+      textposition: 'top center',
+      marker: { color: '#38a169', size: 10 }
+    }], {
+      title: 'μ-σ Diagram',
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Volatility (σ)', color: '#1b4332' },
+      yaxis: { title: 'Expected Return (μ)', color: '#1b4332' }
+    });
 
-const logHistData = {{ log_hist_data | tojson }};
-const traceHist = {
-  x: logHistData,
-  type: 'histogram',
-  marker: { color: '#00c853' },
-  opacity: 0.75
-};
-Plotly.newPlot('histogram-chart', [traceHist], {
-  title: 'Distribution of Log Returns Across Assets',
-  paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
-  xaxis: { title: 'Log Return', color: 'white' },
-  yaxis: { title: 'Frequency', color: 'white' }
-});
+    const cumReturns = {{ cum_returns_data | tojson }};
+    const dates = cumReturns.map(d => d.date);
+    const etfs = Object.keys(cumReturns[0]).filter(k => k !== 'date');
+    Plotly.newPlot('cum-returns-chart', etfs.map(etf => ({
+      x: dates,
+      y: cumReturns.map(d => d[etf]),
+      type: 'scatter',
+      mode: 'lines',
+      name: etf
+    })), {
+      title: 'Cumulative Log Returns',
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Date', color: '#1b4332' },
+      yaxis: { title: 'Value', color: '#1b4332' }
+    });
 
-const muSigmaData = {{ mu_sigma_data | tojson }};
-const cumReturns = {{ cum_returns_data | tojson }};
-const smoothedWeights = {{ smoothed_data | tojson }};
+    const smoothedWeights = {{ smoothed_data | tojson }};
+    const weightDates = smoothedWeights.map(d => d.date);
+    const assets = Object.keys(smoothedWeights[0]).filter(k => k !== 'date');
+    Plotly.newPlot('weights-chart', assets.map(asset => ({
+      x: weightDates,
+      y: smoothedWeights.map(d => d[asset]),
+      type: 'scatter',
+      mode: 'lines',
+      stackgroup: 'one',
+      name: asset
+    })), {
+      title: 'Smoothed Portfolio Weights Over Time',
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Date', color: '#1b4332' },
+      yaxis: { title: 'Weight', color: '#1b4332' }
+    });
+  </script>
 
-// μ-σ Chart
-const traceMuSigma = {
-  x: muSigmaData.map(d => d.sigma),
-  y: muSigmaData.map(d => d.mu),
-  mode: 'markers+text',
-  type: 'scatter',
-  text: muSigmaData.map(d => d.label),
-  textposition: 'top center',
-  marker: { color: '#00c853', size: 10 }
-};
-Plotly.newPlot('mu-sigma-chart', [traceMuSigma], {
-  title: 'μ-σ Diagram', paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
-  xaxis: { title: 'Volatility (σ)', color: 'white' },
-  yaxis: { title: 'Expected Return (μ)', color: 'white' }
-});
-
-// Cumulative Return Chart
-const dates = cumReturns.map(d => d.date);
-const etfs = Object.keys(cumReturns[0]).filter(k => k !== 'date');
-const tracesCum = etfs.map(etf => ({
-  x: dates,
-  y: cumReturns.map(d => d[etf]),
-  type: 'scatter',
-  mode: 'lines',
-  name: etf
-}));
-Plotly.newPlot('cum-returns-chart', tracesCum, {
-  title: 'Cumulative Log Returns', paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
-  xaxis: { title: 'Date', color: 'white' },
-  yaxis: { title: 'Value', color: 'white' }
-});
-
-// Weights Chart
-const weightDates = smoothedWeights.map(d => d.date);
-const assets = Object.keys(smoothedWeights[0]).filter(k => k !== 'date');
-const tracesWeights = assets.map(asset => ({
-  x: weightDates,
-  y: smoothedWeights.map(d => d[asset]),
-  type: 'scatter',
-  mode: 'lines',
-  stackgroup: 'one',
-  name: asset
-}));
-Plotly.newPlot('weights-chart', tracesWeights, {
-  title: 'Smoothed Portfolio Weights Over Time', paper_bgcolor: '#121212', plot_bgcolor: '#1f1f1f',
-  xaxis: { title: 'Date', color: 'white' },
-  yaxis: { title: 'Weight', color: 'white' }
-});
-</script>
-
-<style>
+  <style>
 .result-actions {
     display: flex;
     gap: 1rem;
@@ -126,81 +125,5 @@ Plotly.newPlot('weights-chart', tracesWeights, {
 }
 .btn:hover { background-color: #00b24a; }
 
-.section-title {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-    color: white;
-  font-size: 2rem;
-  margin-bottom: 1rem;
-  color: white;
-}
-.metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-}
-.card {
-    background: #1e1e1e;
-    border-left: 4px solid #00c853;
-    padding: 1rem;
-    border-radius: 8px;
-    flex: 0 0 160px;
-    color: white;
-}
-.tags {
-    margin-bottom: 2rem;
-}
-.tag {
-    display: inline-block;
-    background: #2e2e2e;
-    color: #00e676;
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    font-size: 0.85rem;
-    margin-right: 0.5rem;
-  background-color: #1f1f1f;
-  border-left: 4px solid #00c853;
-  border-radius: 8px;
-  padding: 1rem;
-  flex: 0 0 220px;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.subsection {
-    margin-top: 2.5rem;
-    font-size: 1.3rem;
-    border-bottom: 1px solid #00c853;
-    padding-bottom: 0.3rem;
-    color: white;
-}
-.chart-img {
-    width: 100%;
-    max-width: 900px;
-    margin-top: 1rem;
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0,200,83,0.2);
-}
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #333;
-    color: #00e676;
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    box-shadow: 0 0 10px rgba(0,200,83,0.4);
-  margin-top: 2rem;
-  font-size: 1.3rem;
-  border-bottom: 1px solid #00c853;
-  padding-bottom: 0.3rem;
-  color: white;
-}
 </style>
-
 {% endblock %}

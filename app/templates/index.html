@@ -1,7 +1,33 @@
 {% extends 'layout.html' %}
 {% block title %}Home{% endblock %}
+
 {% block content %}
-<h1>Welcome to the Green Robo Advisor</h1>
-<p>Simulate your ETF investment strategies.</p>
-<a href="{{ url_for('routes.form') }}" class="btn-green">Start Portfolio</a>
+<div class="text-center">
+    <h1 style="font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem;">Welcome to NAVA</h1>
+    <p style="font-size: 1.1rem; color: #2f855a; margin-bottom: 1.5rem;">
+      Your Sustainable Robo Advisor - Smart, Green, Profitable
+    </p>
+  </div>
+<div class="hero-container">
+  <!-- Left CTA Card -->
+  <div class="hero-card">
+    <h2 class="hero-heading">Global Investment Portfolio</h2>
+    <p class="hero-subtext">Less risk, more potential.</p>
+    <ul class="hero-list">
+      <li>✅ Advanced algorithms optimize your portfolio based on your risk profile.</li>
+      <li>✅ Focus on environmental, social and governance factors.</li>
+      <li>✅ Make informed decisions with comprehensive analytics.</li>
+    </ul>
+    <a href="{{ url_for('routes.form') }}">
+      <button class="btn-submit">Start Your Portfolio</button>
+    </a>
+  </div>
+
+  <!-- Right Logo Section -->
+  <div class="hero-logo">
+    <img src="{{ url_for('static', filename='NAVA.jpeg') }}" alt="NAVA Logo" class="nava-logo" />
+    <!-- <h1 class="nava-title">NAVA</h1>
+    <p class="nava-subtitle">Your Sustainable Robo Advisor</p> -->
+  </div>
+</div>
 {% endblock %}

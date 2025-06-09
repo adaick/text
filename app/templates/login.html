@@ -1,12 +1,26 @@
 {% extends 'layout.html' %}
 {% block title %}Login{% endblock %}
+
 {% block content %}
-<h2>Login</h2>
-<form method="POST">
+  <h2 style="font-size: 1.75rem; color: #065f46; font-weight: 600; margin-bottom: 1rem;">Login</h2>
+
+  <form method="POST">
     {{ form.hidden_tag() }}
-    {{ form.email.label }} {{ form.email() }}<br>
-    {{ form.password.label }} {{ form.password() }}<br>
-    {{ form.remember() }} {{ form.remember.label }}<br>
-    {{ form.submit() }}
-</form>
+
+    <label>
+      {{ form.email.label }}
+      {{ form.email(class_='input-field') }}
+    </label>
+
+    <label>
+      {{ form.password.label }}
+      {{ form.password(class_='input-field') }}
+    </label>
+
+    <label style="display: flex; align-items: center; gap: 0.5rem;">
+      {{ form.remember() }} {{ form.remember.label }}
+    </label>
+
+    {{ form.submit(class_='btn-submit') }}
+  </form>
 {% endblock %}

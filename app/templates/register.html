@@ -1,13 +1,32 @@
 {% extends 'layout.html' %}
 {% block title %}Register{% endblock %}
+
 {% block content %}
-<h2>Register</h2>
-<form method="POST">
+  <h2 style="font-size: 1.75rem; color: #065f46; font-weight: 600; margin-bottom: 1rem;">Register</h2>
+
+  <form method="POST">
     {{ form.hidden_tag() }}
-    {{ form.username.label }} {{ form.username() }}<br>
-    {{ form.email.label }} {{ form.email() }}<br>
-    {{ form.password.label }} {{ form.password() }}<br>
-    {{ form.confirm_password.label }} {{ form.confirm_password() }}<br>
-    {{ form.submit() }}
-</form>
+
+    <label>
+      {{ form.username.label }}
+      {{ form.username(class_='input-field') }}
+    </label>
+
+    <label>
+      {{ form.email.label }}
+      {{ form.email(class_='input-field') }}
+    </label>
+
+    <label>
+      {{ form.password.label }}
+      {{ form.password(class_='input-field') }}
+    </label>
+
+    <label>
+      {{ form.confirm_password.label }}
+      {{ form.confirm_password(class_='input-field') }}
+    </label>
+
+    {{ form.submit(class_='btn-submit') }}
+  </form>
 {% endblock %}
