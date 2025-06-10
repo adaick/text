@@ -181,17 +181,20 @@ def more_charts():
         asset_prices_data=price_data
     )
 
+
 @bp.route('/results', methods=['POST'])
 def results():
     import numpy as np
+    from flask import session, redirect, url_for
 
     strategy = request.form.get('strategy')
     name = request.form.get('name')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
-    session['start_date'] = start_date
-    session['end_date'] = end_date    
-    print("Name received from form:", name)
+    session['start_date'] = start_date  # already handled earlier
+    session['end_date'] = end_date
+    session['name'] = name
+
     expected_return = None
     volatility_cap = None
 
@@ -199,25 +202,37 @@ def results():
         option = request.form.get('expected_return_option')
         if option == 'custom':
             expected_return = float(request.form.get('custom_expected', 3)) / 100
-        elif option == 'low':
-            expected_return = 0.004
-        elif option == 'medium':
-            expected_return = 0.006
-        elif option == 'high':
-            expected_return = 0.008
+        elif option == 'low': expected_return = 0.004
+        elif option == 'medium': expected_return = 0.006
+        elif option == 'high': expected_return = 0.008
         expected_return = expected_return or 0.006
 
     elif strategy == 'max-exp':
         option = request.form.get('volatility_cap_option')
         if option == 'custom':
             volatility_cap = float(request.form.get('custom_volatility', 7)) / 100
-        elif option == 'low':
-            volatility_cap = max(0.006 - 2 * 0.002, 0.0)
-        elif option == 'medium':
-            volatility_cap = 0.006
-        elif option == 'high':
-            volatility_cap = 0.006 + 2 * 0.002
+        elif option == 'low': volatility_cap = max(0.006 - 2 * 0.002, 0.0)
+        elif option == 'medium': volatility_cap = 0.006
+        elif option == 'high': volatility_cap = 0.006 + 2 * 0.002
         volatility_cap = volatility_cap or 0.006
+
+    session['strategy'] = strategy
+    session['expected_return'] = expected_return
+    session['volatility_cap'] = volatility_cap
+
+    return redirect(url_for('routes.results_view'))  # ✅ redirect after POST
+
+
+# ✅ GET handler to show results safely
+@bp.route('/results/view')
+def results_view():
+    import numpy as np
+    strategy = session.get('strategy')
+    name = session.get('name')
+    expected_return = session.get('expected_return')
+    volatility_cap = session.get('volatility_cap')
+    start_date = session.get('start_date')
+    end_date = session.get('end_date')
 
     ticker = pd.read_excel("Green_ETF_Selection.xlsx", sheet_name="ETF_Universe", engine="openpyxl")
     tickers = list(ticker.Ticker)
@@ -239,32 +254,24 @@ def results():
     mu = logR.mean()
     Cov = logR.cov()
     rf = RA.rf
-    portfolio_return = sol @ mu.T  # added new
-    portfolio_volatility = (sol @ Cov @ sol.T) ** 0.5  # added new
+    portfolio_return = sol @ mu.T
+    portfolio_volatility = (sol @ Cov @ sol.T) ** 0.5
     sharpe_ratio = round(((portfolio_return - rf) / portfolio_volatility), 4)
 
-    print("=== Simulation Debug ===")
-    print(f"Strategy: {strategy}")
-    print(f"Weights: {sol}")
-    print(f"Expected Return: {portfolio_return}")
-    print(f"Volatility: {portfolio_volatility}")
-    print(f"Sharpe Ratio: {sharpe_ratio}")
-    print("========================")
-
     if current_user.is_authenticated:
-            from app.models import History
-            new_entry = History(
-                user_id=current_user.id,
-                strategy=strategy,
-                expected_return=expected_return,
-                volatility_cap=volatility_cap,
-                result_summary=f"Sharpe Ratio: {sharpe_ratio}"
-            )
-            db.session.add(new_entry)
-            db.session.commit()
+        from app.models import History
+        new_entry = History(
+            user_id=current_user.id,
+            strategy=strategy,
+            expected_return=expected_return,
+            volatility_cap=volatility_cap,
+            result_summary=f"Sharpe Ratio: {sharpe_ratio}"
+        )
+        db.session.add(new_entry)
+        db.session.commit()
 
-    weight_series = pd.DataFrame([sol] * len(logR), columns=logR.columns, index=logR.index)  # added new
-    smoothed_df = RA.exp_smoothing(weight_series)  # added new
+    weight_series = pd.DataFrame([sol] * len(logR), columns=logR.columns, index=logR.index)
+    smoothed_df = RA.exp_smoothing(weight_series)
     smoothed_data = [{"date": str(date), **row.to_dict()} for date, row in smoothed_df.iterrows()]
 
     sigma_vals = logR.std()
@@ -273,14 +280,14 @@ def results():
 
     cum_returns = (1 + logR).cumprod()
     cum_returns_data = [{"date": str(date), **row.to_dict()} for date, row in cum_returns.iterrows()]
-
     log_hist_data = logR.values.flatten().tolist()
 
-    portfolio_series = (logR @ sol).cumsum()  # added new
-    strategy_returns_data = [{"date": str(date), "value": val} for date, val in portfolio_series.items()]  # added new
+    portfolio_series = (logR @ sol).cumsum()
+    strategy_returns_data = [{"date": str(date), "value": val} for date, val in portfolio_series.items()]
 
     return render_template('results.html',
         strategy=strategy,
+        name=name,
         expected_return=round((expected_return or 0.0) * 100, 2),
         volatility_cap=round((volatility_cap or 0.0) * 100, 2),
         sharpe_ratio=sharpe_ratio,
@@ -290,5 +297,5 @@ def results():
         cum_returns_data=cum_returns_data,
         smoothed_data=smoothed_data,
         log_hist_data=log_hist_data,
-        strategy_returns_data=strategy_returns_data  # added new
+        strategy_returns_data=strategy_returns_data
     )
