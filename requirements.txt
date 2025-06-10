@@ -4,7 +4,7 @@ Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.2
 Flask==2.3.3
 Jinja2
-SQLAlchemy==2.0.41
+SQLAlchemy==1.4.46
 WTForms==3.2.1
 email_validator==2.2.0
 gunicorn==21.2.0
