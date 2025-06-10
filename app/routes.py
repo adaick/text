@@ -6,6 +6,7 @@ from app.forms import RegistrationForm, LoginForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import History
 from flask_login import login_required
+from flask import session
 
 import pandas as pd
 from app.robo.Green_Robo_Advisor_Class import RoboAdvisor
@@ -157,9 +158,9 @@ def history():
 
 @bp.route('/more-charts')
 def more_charts():
-    # Pull dates from session or fallback (can improve later)
-    start_date = '2021-01-01'
-    end_date = '2023-01-01'
+    # Get dates from session or fallback to default  # added new
+    start_date = session.get("start_date", "2022-01-01")  # added new
+    end_date = session.get("end_date", "2023-01-01")  # added new
 
     ticker = pd.read_excel("Green_ETF_Selection.xlsx", sheet_name="ETF_Universe", engine="openpyxl")
     tickers = list(ticker.Ticker)
@@ -188,6 +189,8 @@ def results():
     name = request.form.get('name')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
+    session['start_date'] = start_date
+    session['end_date'] = end_date    
     print("Name received from form:", name)
     expected_return = None
     volatility_cap = None
