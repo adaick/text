@@ -186,12 +186,13 @@ def more_charts():
 
 @bp.route('/results', methods=['POST'])
 def results():
+    import numpy as np
 
     strategy = request.form.get('strategy')
     name = request.form.get('name')
     start_date = request.form.get('start_date')
     end_date = request.form.get('end_date')
-
+    print("Name received from form:", name)
     expected_return = None
     volatility_cap = None
 
@@ -229,21 +230,42 @@ def results():
     RA = RoboAdvisor(df_cleaned, rf='Green Bonds', benchmark='MSCI World SRI')
     logR = RA.getLogReturn(df_cleaned)
 
-    sol = RA.optimizeWeights(
-        logR=logR,
-        strategy=strategy,
-        mup=expected_return if expected_return is not None else 0.006,
-        sigmap=volatility_cap if volatility_cap is not None else 0.006,
-        printSol=False
-    )
+    if strategy == 'min-var':
+        sol = RA.optimizeWeights(logR=logR, strategy='min-var', mup=expected_return, printSol=False)
+    elif strategy == 'max-exp':
+        sol = RA.optimizeWeights(logR=logR, strategy='max-exp', sigmap=volatility_cap, printSol=False)
+    elif strategy == 'max-sharpe-ratio':
+        sol = RA.optimizeWeights(logR=logR, strategy='max-sharpe-ratio', printSol=False)
 
     mu = logR.mean()
     Cov = logR.cov()
     rf = RA.rf
-    sharpe_ratio = round(((sol @ mu.T - rf) / (sol @ Cov @ sol.T) ** 0.5), 4)
+    portfolio_return = sol @ mu.T  # added new
+    portfolio_volatility = (sol @ Cov @ sol.T) ** 0.5  # added new
+    sharpe_ratio = round(((portfolio_return - rf) / portfolio_volatility), 4)
 
-    weight_series = RA.get_optimal_allocation_over_time(strategy=strategy)
-    smoothed_df = RA.exp_smoothing(weight_series)
+    print("=== Simulation Debug ===")
+    print(f"Strategy: {strategy}")
+    print(f"Weights: {sol}")
+    print(f"Expected Return: {portfolio_return}")
+    print(f"Volatility: {portfolio_volatility}")
+    print(f"Sharpe Ratio: {sharpe_ratio}")
+    print("========================")
+
+    if current_user.is_authenticated:
+            from app.models import History
+            new_entry = History(
+                user_id=current_user.id,
+                strategy=strategy,
+                expected_return=expected_return,
+                volatility_cap=volatility_cap,
+                result_summary=f"Sharpe Ratio: {sharpe_ratio}"
+            )
+            db.session.add(new_entry)
+            db.session.commit()
+
+    weight_series = pd.DataFrame([sol] * len(logR), columns=logR.columns, index=logR.index)  # added new
+    smoothed_df = RA.exp_smoothing(weight_series)  # added new
     smoothed_data = [{"date": str(date), **row.to_dict()} for date, row in smoothed_df.iterrows()]
 
     sigma_vals = logR.std()
@@ -253,8 +275,10 @@ def results():
     cum_returns = (1 + logR).cumprod()
     cum_returns_data = [{"date": str(date), **row.to_dict()} for date, row in cum_returns.iterrows()]
 
-    # ✅ Flattened log returns for histogram chart
     log_hist_data = logR.values.flatten().tolist()
+
+    portfolio_series = (logR @ sol).cumsum()  # added new
+    strategy_returns_data = [{"date": str(date), "value": val} for date, val in portfolio_series.items()]  # added new
 
     return render_template('results.html',
         strategy=strategy,
@@ -266,5 +290,6 @@ def results():
         mu_sigma_data=mu_sigma_data,
         cum_returns_data=cum_returns_data,
         smoothed_data=smoothed_data,
-        log_hist_data=log_hist_data
+        log_hist_data=log_hist_data,
+        strategy_returns_data=strategy_returns_data  # added new
     )
