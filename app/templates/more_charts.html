@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layout.html' %}More actions
 {% block title %}More Charts{% endblock %}
 
 {% block content %}
@@ -9,9 +9,6 @@
 
   <h3 class="subsection">Asset Prices Overview</h3>
   <div id="asset-prices-chart" class="chart-box"></div>
-
-  <h3 class="subsection">Asset Log Return Distribution</h3>
-  <div id="histogram-chart" class="chart-box"></div>
 
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script>
@@ -55,20 +52,6 @@
         yaxis: { title: 'Price', color: '#1b4332' }
       });
     }
-
-    const logHistData = {{ log_hist_data | tojson }};
-    Plotly.newPlot('histogram-chart', [{
-      x: logHistData,
-      type: 'histogram',
-      marker: { color: '#38a169' },
-      opacity: 0.75
-    }], {
-      title: 'Distribution of Log Returns Across Assets',
-      paper_bgcolor: '#ffffff',
-      plot_bgcolor: '#f0fdf4',
-      xaxis: { title: 'Log Return', color: '#1b4332' },
-      yaxis: { title: 'Frequency', color: '#1b4332' }
-    });
 
   </script>
 {% endblock %}

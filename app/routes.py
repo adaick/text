@@ -157,10 +157,6 @@ def history():
 
 @bp.route('/more-charts')
 def more_charts():
-    import pandas as pd
-    import yfinance as yfin
-    from app.robo.Green_Robo_Advisor_Class import RoboAdvisor
-
     # Pull dates from session or fallback (can improve later)
     start_date = '2021-01-01'
     end_date = '2023-01-01'
