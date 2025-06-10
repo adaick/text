@@ -13,7 +13,7 @@
   <!-- Welcome Message -->
   <h2 class="section-title">Portfolio Simulation Summary</h2>
   {% if current_user.is_authenticated %}
-    <p class="welcome-msg" style="color: #2f855a;">Hello {{ current_user.username }} 👋</p>
+    <p class="welcome-msg" style="color: #2f855a;">Hello {{ current_user.username if current_user.is_authenticated else name or 'Guest' }} 👋</p>
   {% endif %}
 
   <!-- Key Metrics -->
@@ -24,9 +24,13 @@
     <div class="card"><h3>Sharpe Ratio</h3><p>{{ sharpe_ratio }}</p></div>
   </div>
 
-  <!-- Chart Sections -->
-  <h3 class="subsection">Asset Log Return Distribution</h3>
-  <div id="histogram-chart" class="chart-box"></div>
+  <!-- Interactive Chart Sections -->
+
+  <h3 class="text-white text-lg mb-2">ETF Weight Allocation</h3> <!-- added new -->
+  <div id="allocation-chart"></div> <!-- added new -->
+
+  <h3 class="text-white text-lg mb-2">Optimized Strategy Return</h3> <!-- added new -->
+  <div id="strategy-returns-chart"></div> <!-- added new -->
 
   <h3 class="subsection">μ-σ Diagram</h3>
   <div id="mu-sigma-chart" class="chart-box"></div>
@@ -36,6 +40,9 @@
 
   <h3 class="subsection">Smoothed Portfolio Weights</h3>
   <div id="weights-chart" class="chart-box"></div>
+
+  <h3 class="subsection">Asset Log Return Distribution</h3>
+  <div id="histogram-chart" class="chart-box"></div>
 
   <!-- Plotly CDN -->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -105,6 +112,39 @@
       xaxis: { title: 'Date', color: '#1b4332' },
       yaxis: { title: 'Weight', color: '#1b4332' }
     });
+
+    const strategyData = {{ strategy_returns_data | tojson }};  // added new
+    const strategyTrace = {  // added new
+      x: strategyData.map(d => d.date),  // added new
+      y: strategyData.map(d => d.value),  // added new
+      mode: 'lines',  // added new
+      line: { color: '#00c853' },  // added new
+      name: 'Strategy Return'  // added new
+    };  // added new
+    Plotly.newPlot('strategy-returns-chart', [strategyTrace], {  // added new
+      paper_bgcolor: '#121212',  // added new
+      plot_bgcolor: '#121212',  // added new
+      font: { color: 'white' },  // added new
+      margin: { t: 20 }  // added new
+    });  // added new
+    
+    const allocationLabels = {{ labels | tojson }};  // added new
+    const allocationValues = {{ weights | tojson }}.map(w => Math.round(w * 10000) / 100);  // added new
+    const allocationTrace = {  // added new
+      x: allocationLabels,  // added new
+      y: allocationValues,  // added new
+      type: 'bar',  // added new
+      marker: { color: '#00c853' }  // added new
+    };  // added new
+    Plotly.newPlot('allocation-chart', [allocationTrace], {  // added new
+      title: 'ETF Weight Allocation (%)',  // added new
+      xaxis: { title: 'ETF', color: 'white' },  // added new
+      yaxis: { title: 'Weight (%)', color: 'white' },  // added new
+      paper_bgcolor: '#121212',  // added new
+      plot_bgcolor: '#121212',  // added new
+      font: { color: 'white' }  // added new
+    });  // added new
+    
   </script>
 
   <style>
