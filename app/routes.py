@@ -258,13 +258,21 @@ def results_view():
     portfolio_volatility = (sol @ Cov @ sol.T) ** 0.5
     sharpe_ratio = round(((portfolio_return - rf) / portfolio_volatility), 4)
 
+    print("=== Simulation Debug ===")
+    print(f"Strategy: {strategy}")
+    print(f"Weights: {sol}")
+    print(f"Expected Return: {portfolio_return}")
+    print(f"Volatility: {portfolio_volatility}")
+    print(f"Sharpe Ratio: {sharpe_ratio}")
+    print("========================")
+
     if current_user.is_authenticated:
         from app.models import History
         new_entry = History(
             user_id=current_user.id,
             strategy=strategy,
-            expected_return=expected_return,
-            volatility_cap=volatility_cap,
+            expected_return=portfolio_return,
+            volatility_cap=portfolio_volatility,
             result_summary=f"Sharpe Ratio: {sharpe_ratio}"
         )
         db.session.add(new_entry)
@@ -288,8 +296,8 @@ def results_view():
     return render_template('results.html',
         strategy=strategy,
         name=name,
-        expected_return=round((expected_return or 0.0) * 100, 2),
-        volatility_cap=round((volatility_cap or 0.0) * 100, 2),
+        expected_return=round(portfolio_return * 100, 4),   
+        volatility_cap=round(portfolio_volatility * 100, 4),
         sharpe_ratio=sharpe_ratio,
         labels=list(df_cleaned.columns),
         weights=[round(w, 4) for w in sol],

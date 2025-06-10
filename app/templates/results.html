@@ -19,8 +19,8 @@
   <!-- Key Metrics -->
   <div class="metrics">
     <div class="card"><h3>Strategy</h3><p>{{ strategy.replace('-', ' ').title() }}</p></div>
-    <div class="card"><h3>Expected Return</h3><p>{{ expected_return }}%</p></div>
-    <div class="card"><h3>Volatility Cap</h3><p>{{ volatility_cap }}%</p></div>
+    <div class="card"><h3>Expected Return</h3><p>{{ '%.4f' % expected_return }}%</p></div>
+    <div class="card"><h3>Volatility Cap</h3><p>{{ '%.4f' % volatility_cap }}%</p></div>
     <div class="card"><h3>Sharpe Ratio</h3><p>{{ sharpe_ratio }}</p></div>
   </div>
 
