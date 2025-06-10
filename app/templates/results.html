@@ -105,10 +105,10 @@
       name: 'Strategy Return'  // added new
     };  // added new
     Plotly.newPlot('strategy-returns-chart', [strategyTrace], {  // added new
-      paper_bgcolor: '#121212',  // added new
-      plot_bgcolor: '#121212',  // added new
-      font: { color: 'white' },  // added new
-      margin: { t: 20 }  // added new
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Date', color: '#1b4332' },
+      yaxis: { title: 'Weight', color: '#1b4332' }
     });  // added new
     
     const allocationLabels = {{ labels | tojson }};  // added new
@@ -123,9 +123,10 @@
       title: 'ETF Weight Allocation (%)',  // added new
       xaxis: { title: 'ETF', color: 'white' },  // added new
       yaxis: { title: 'Weight (%)', color: 'white' },  // added new
-      paper_bgcolor: '#121212',  // added new
-      plot_bgcolor: '#121212',  // added new
-      font: { color: 'white' }  // added new
+      paper_bgcolor: '#ffffff',
+      plot_bgcolor: '#f0fdf4',
+      xaxis: { title: 'Date', color: '#1b4332' },
+      yaxis: { title: 'Weight', color: '#1b4332' }
     });  // added new
 
   </script>
