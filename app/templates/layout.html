@@ -14,6 +14,7 @@
             <a href="{{ url_for('routes.home') }}">NAVA</a>
         </div>
         <div class="nav-right">
+          <a href="{{ url_for('routes.about') }}">About</a>
         {% if current_user.is_authenticated %}
             <a href="{{ url_for('routes.home') }}">Home</a>
             <a href="{{ url_for('routes.logout') }}">Logout</a>
