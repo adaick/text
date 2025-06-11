@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from app.models import History
 from flask_login import login_required
 from flask import session
+from datetime import datetime
+
 
 import pandas as pd
 from app.robo.Green_Robo_Advisor_Class import RoboAdvisor
@@ -59,6 +61,11 @@ def logout():
 @bp.route('/form')
 def form():
     return render_template('form.html')
+
+@bp.route('/about')
+def about():
+    return render_template('about.html')
+
 
 # @bp.route('/results', methods=['POST'])
 # def results():
@@ -259,6 +266,10 @@ def results_view():
     sharpe_ratio = round(((portfolio_return - rf) / portfolio_volatility), 4)
 
     print("=== Simulation Debug ===")
+    print(f"Name: {name}")
+    print("========================")
+
+    print("=== Simulation Debug ===")
     print(f"Strategy: {strategy}")
     print(f"Weights: {sol}")
     print(f"Expected Return: {portfolio_return}")
@@ -305,5 +316,6 @@ def results_view():
         cum_returns_data=cum_returns_data,
         smoothed_data=smoothed_data,
         log_hist_data=log_hist_data,
-        strategy_returns_data=strategy_returns_data
+        strategy_returns_data=strategy_returns_data,
+        now=datetime.now()
     )

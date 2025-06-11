@@ -8,39 +8,42 @@
     <a href="{{ url_for('routes.form') }}" class="btn">Adjust Portfolio</a>
 <!--    <a href="{{ url_for('routes.home') }}" class="btn">Back to Home</a> -->
     <a href="{{ url_for('routes.more_charts') }}" class="btn">More Charts</a>
+    <button onclick="downloadReport()" class="btn">Download Report</button>
 </div>
+<div>
+  <div id="pdf-content"></div>
+    <!-- Welcome Message -->
+    <h2 class="section-title">Portfolio Simulation Summary</h2>
+    {% if current_user.is_authenticated %}
+      <p class="welcome-msg" style="color: #2f855a;">Hello {{ current_user.username if current_user.is_authenticated else name or 'Guest' }} 👋</p>
+    {% endif %}
+    <p class="text-white text-sm mb-4">Generated on {{ now.strftime('%Y-%m-%d %H:%M') }} </p>
 
-  <!-- Welcome Message -->
-  <h2 class="section-title">Portfolio Simulation Summary</h2>
-  {% if current_user.is_authenticated %}
-    <p class="welcome-msg" style="color: #2f855a;">Hello {{ current_user.username if current_user.is_authenticated else name or 'Guest' }} 👋</p>
-  {% endif %}
+    <!-- Key Metrics -->
+    <div class="metrics">
+      <div class="card"><h3>Strategy</h3><p>{{ strategy.replace('-', ' ').title() }}</p></div>
+      <div class="card"><h3>Expected Return</h3><p>{{ '%.4f' % expected_return }}%</p></div>
+      <div class="card"><h3>Volatility Cap</h3><p>{{ '%.4f' % volatility_cap }}%</p></div>
+      <div class="card"><h3>Sharpe Ratio</h3><p>{{ sharpe_ratio }}</p></div>
+    </div>
 
-  <!-- Key Metrics -->
-  <div class="metrics">
-    <div class="card"><h3>Strategy</h3><p>{{ strategy.replace('-', ' ').title() }}</p></div>
-    <div class="card"><h3>Expected Return</h3><p>{{ '%.4f' % expected_return }}%</p></div>
-    <div class="card"><h3>Volatility Cap</h3><p>{{ '%.4f' % volatility_cap }}%</p></div>
-    <div class="card"><h3>Sharpe Ratio</h3><p>{{ sharpe_ratio }}</p></div>
+    <!-- Interactive Chart Sections -->
+
+    <h3 class="text-white text-lg mb-2">ETF Weight Allocation</h3> <!-- added new -->
+    <div id="allocation-chart"></div> <!-- added new -->
+
+    <h3 class="text-white text-lg mb-2">Optimized Strategy Return</h3> <!-- added new -->
+    <div id="strategy-returns-chart"></div> <!-- added new -->
+
+    <h3 class="subsection">μ-σ Diagram</h3>
+    <div id="mu-sigma-chart" class="chart-box"></div>
+
+    <h3 class="subsection">Cumulative Returns</h3>
+    <div id="cum-returns-chart" class="chart-box"></div>
+
+    <h3 class="subsection">Smoothed Portfolio Weights</h3>
+    <div id="weights-chart" class="chart-box"></div>
   </div>
-
-  <!-- Interactive Chart Sections -->
-
-  <h3 class="text-white text-lg mb-2">ETF Weight Allocation</h3> <!-- added new -->
-  <div id="allocation-chart"></div> <!-- added new -->
-
-  <h3 class="text-white text-lg mb-2">Optimized Strategy Return</h3> <!-- added new -->
-  <div id="strategy-returns-chart"></div> <!-- added new -->
-
-  <h3 class="subsection">μ-σ Diagram</h3>
-  <div id="mu-sigma-chart" class="chart-box"></div>
-
-  <h3 class="subsection">Cumulative Returns</h3>
-  <div id="cum-returns-chart" class="chart-box"></div>
-
-  <h3 class="subsection">Smoothed Portfolio Weights</h3>
-  <div id="weights-chart" class="chart-box"></div>
-
   <!-- Plotly CDN -->
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script>
@@ -131,6 +134,53 @@
 
   </script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+  async function downloadReport() {
+    const chartIDs = [
+      'allocation-chart',
+      'strategy-returns-chart',
+      'mu-sigma-chart',
+      'cum-returns-chart',
+      'weights-chart'
+    ];
+
+    for (let id of chartIDs) {
+      const chartDiv = document.getElementById(id);
+      if (!chartDiv || chartDiv.children.length === 0) continue;
+
+      const imgData = await Plotly.toImage(chartDiv, { format: 'png', width: 800, height: 400 });
+
+      const img = document.createElement('img');
+      img.src = imgData;
+      img.style.width = '100%';
+      img.style.marginBottom = '20px';
+      chartDiv.innerHTML = '';
+      chartDiv.appendChild(img);
+    }
+
+    // ✅ Wait for all <img> to fully load
+    const images = document.querySelectorAll("#pdf-content img");
+    await Promise.all(Array.from(images).map(img => {
+      return new Promise(resolve => {
+        if (img.complete) resolve();
+        else img.onload = resolve;
+      });
+    }));
+
+    // ✅ Then export
+    const element = document.getElementById("pdf-content");
+    const opt = {
+      margin: 0.5,
+      filename: `GreenRobo_Report_{{ now.strftime('%Y-%m-%d_%H-%M') }}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+  }
+</script>
+</div>
   <style>
 .result-actions {
     display: flex;
